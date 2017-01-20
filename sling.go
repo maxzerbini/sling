@@ -35,6 +35,8 @@ type Sling struct {
 	header http.Header
 	// url tagged query structs
 	queryStructs []interface{}
+	// query string parametrs map alternative to queryStructs
+	queryString map[string]string
 	// body provider
 	bodyProvider BodyProvider
 }
@@ -46,6 +48,7 @@ func New() *Sling {
 		method:       "GET",
 		header:       make(http.Header),
 		queryStructs: make([]interface{}, 0),
+		queryString:  make(map[string]string, 0),
 	}
 }
 
@@ -73,6 +76,7 @@ func (s *Sling) New() *Sling {
 		rawURL:       s.rawURL,
 		header:       headerCopy,
 		queryStructs: append([]interface{}{}, s.queryStructs...),
+		queryString:  mergeMap(make(map[string]string, 0), s.queryString),
 		bodyProvider: s.bodyProvider,
 	}
 }
@@ -200,6 +204,23 @@ func (s *Sling) QueryStruct(queryStruct interface{}) *Sling {
 	return s
 }
 
+// QueryString merge the queryString in the Sling's queryString.
+func (s *Sling) QueryString(queryString map[string]string) *Sling {
+	if queryString != nil {
+		s.queryString = mergeMap(s.queryString, queryString)
+	}
+	return s
+}
+
+func mergeMap(map1, map2 map[string]string) map[string]string {
+	if map1 != nil && map2 != nil {
+		for key, val := range map2 {
+			map1[key] = val
+		}
+	}
+	return map1
+}
+
 // Body
 
 // Body sets the Sling's body. The body value will be set as the Body on new
@@ -265,6 +286,10 @@ func (s *Sling) Request() (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = addQueryString(reqURL, s.queryString)
+	if err != nil {
+		return nil, err
+	}
 
 	var body io.Reader
 	if s.bodyProvider != nil {
@@ -300,6 +325,21 @@ func addQueryStructs(reqURL *url.URL, queryStructs []interface{}) error {
 				urlValues.Add(key, value)
 			}
 		}
+	}
+	// url.Values format to a sorted "url encoded" string, e.g. "key=val&foo=bar"
+	reqURL.RawQuery = urlValues.Encode()
+	return nil
+}
+
+// addQueryString add parameters to the url
+func addQueryString(reqURL *url.URL, queryString map[string]string) error {
+	urlValues, err := url.ParseQuery(reqURL.RawQuery)
+	if err != nil {
+		return err
+	}
+	// add parameters to url.Values map
+	for key, value := range queryString {
+		urlValues.Add(key, value)
 	}
 	// url.Values format to a sorted "url encoded" string, e.g. "key=val&foo=bar"
 	reqURL.RawQuery = urlValues.Encode()

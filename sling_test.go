@@ -456,6 +456,31 @@ func TestRequest_queryStructs(t *testing.T) {
 	}
 }
 
+func TestRequest_querySting(t *testing.T) {
+	paramsQS1 := make(map[string]string, 0)
+	paramsQS1["limit"] = "30"
+	paramsQS2 := make(map[string]string, 0)
+	paramsQS2["count"] = "25"
+	paramsQS2["kind_name"] = "recent"
+
+	cases := []struct {
+		sling       *Sling
+		expectedURL string
+	}{
+		{New().Base("http://a.io").QueryString(paramsQS1), "http://a.io?limit=30"},
+		{New().Base("http://a.io").QueryString(paramsQS1).QueryString(paramsQS2), "http://a.io?count=25&kind_name=recent&limit=30"},
+		{New().Base("http://a.io/").Path("foo?path=yes").QueryString(paramsQS1), "http://a.io/foo?limit=30&path=yes"},
+		{New().Base("http://a.io").QueryString(paramsQS1).New(), "http://a.io?limit=30"},
+		{New().Base("http://a.io").QueryString(paramsQS1).New().QueryString(paramsQS2), "http://a.io?count=25&kind_name=recent&limit=30"},
+	}
+	for _, c := range cases {
+		req, _ := c.sling.Request()
+		if req.URL.String() != c.expectedURL {
+			t.Errorf("expected url %s, got %s for %+v", c.expectedURL, req.URL.String(), c.sling)
+		}
+	}
+}
+
 func TestRequest_body(t *testing.T) {
 	cases := []struct {
 		sling               *Sling

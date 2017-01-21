@@ -92,7 +92,7 @@ params := make(map[string]string, 0)
 params["count"] = "25"
 params["kind_name"] = "recent"
 
-req, err := githubBase.New().Get(path).QueryString(paramsQS1).Request()
+req, err := githubBase.New().Get(path).QueryString(params).Request()
 ```
 ### Body
 

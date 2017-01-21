@@ -462,6 +462,7 @@ func TestRequest_querySting(t *testing.T) {
 	paramsQS2 := make(map[string]string, 0)
 	paramsQS2["count"] = "25"
 	paramsQS2["kind_name"] = "recent"
+	paramsQS2["ignored"] = ""
 
 	cases := []struct {
 		sling       *Sling

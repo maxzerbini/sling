@@ -215,7 +215,9 @@ func (s *Sling) QueryString(queryString map[string]string) *Sling {
 func mergeMap(map1, map2 map[string]string) map[string]string {
 	if map1 != nil && map2 != nil {
 		for key, val := range map2 {
-			map1[key] = val
+			if val != "" {
+				map1[key] = val
+			}
 		}
 	}
 	return map1

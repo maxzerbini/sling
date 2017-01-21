@@ -28,6 +28,22 @@ var paramsA = struct {
 }
 var paramsB = FakeParams{KindName: "recent", Count: 25}
 
+var paramsQS1 = map[string]string{
+	"limit": "30",
+}
+
+var paramsQS2 = map[string]string{
+	"count":     "25",
+	"kind_name": "recent",
+	"ignored":   "",
+}
+
+var paramsQS3 = map[string]string{
+	"limit":     "30",
+	"count":     "25",
+	"kind_name": "recent",
+}
+
 // Json-tagged model struct
 type FakeModel struct {
 	Text          string  `json:"text,omitempty"`
@@ -306,6 +322,33 @@ func TestQueryStructSetter(t *testing.T) {
 	}
 }
 
+func TestQueryStringSetter(t *testing.T) {
+	cases := []struct {
+		name           string
+		sling          *Sling
+		expectedString map[string]string
+	}{
+		{"New empty", New(), make(map[string]string)},
+		{"New plus empty", New().QueryString(nil), make(map[string]string)},
+		{"paramsQS1 only", New().QueryString(paramsQS1), paramsQS1},
+		{"paramsQS1 and paramsQS1", New().QueryString(paramsQS1).QueryString(paramsQS1), paramsQS1},
+		{"paramsQS1 and paramsQS2", New().QueryString(paramsQS1).QueryString(paramsQS2), paramsQS3},
+		{"paramsQS1 and new", New().QueryString(paramsQS1).New(), paramsQS1},
+		{"paramsQS1 and new and paramsQS2", New().QueryString(paramsQS1).New().QueryString(paramsQS2), paramsQS3},
+	}
+
+	for _, c := range cases {
+		if count := len(c.sling.queryString); count != len(c.expectedString) {
+			t.Errorf("test %s expected length %d, got %d", c.name, len(c.expectedString), count)
+		}
+		for key, expected := range c.expectedString {
+			if c.sling.queryString[key] != expected {
+				t.Errorf("test %s expected to find %v in %v", c.name, expected, c.sling.queryStructs)
+			}
+		}
+	}
+}
+
 func TestBodyJSONSetter(t *testing.T) {
 	fakeModel := &FakeModel{}
 	fakeBodyProvider := jsonBodyProvider{payload: fakeModel}
@@ -457,13 +500,6 @@ func TestRequest_queryStructs(t *testing.T) {
 }
 
 func TestRequest_querySting(t *testing.T) {
-	paramsQS1 := make(map[string]string, 0)
-	paramsQS1["limit"] = "30"
-	paramsQS2 := make(map[string]string, 0)
-	paramsQS2["count"] = "25"
-	paramsQS2["kind_name"] = "recent"
-	paramsQS2["ignored"] = ""
-
 	cases := []struct {
 		sling       *Sling
 		expectedURL string
